@@ -1,0 +1,9 @@
+{
+	"title"		:	"Ragdoll Death", 
+	"type"		:	"ServerContent", 
+	"tags"		:	[ "scenic" , "fun" ], 
+	"ignore"	:
+	[
+		"*.apid"
+	]
+}
