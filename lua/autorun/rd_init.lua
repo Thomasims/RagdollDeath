@@ -33,7 +33,7 @@ function createRagdoll(ply)
 	if ( OldRagdoll && OldRagdoll:IsValid() ) then OldRagdoll:Remove() end
 
 
-	Rag = ents.Create( "prop_ragdoll" )
+	local Rag = ents.Create( "prop_ragdoll" )
 	Rag:SetModel(ply:GetModel())
 	Rag:SetPos(ply:GetPos())
 	Rag:Spawn()
@@ -44,10 +44,12 @@ function createRagdoll(ply)
 	end
 	Rag:SetBodyGroups(bgs)
 	
-	local timedgo = math.abs(TimeRagVar:GetInt())
+	local timedgo = math.max(TimeRagVar:GetInt(),0)
 	if timedgo>0 then
 	  timer.Simple(timedgo,function()
-	    if IsValid(Rag) then Rag:Remove() end
+	    if IsValid(Rag) then 
+			Rag:Remove() 
+		end 
 	  end)
 	end
 	
@@ -83,12 +85,15 @@ function createRagdoll(ply)
 		ply:SetNWEntity( "RagDeath", Rag )
 	end
 	
+	timer.Simple(0.01,function()
 	net.Start("ragdeath_client")
 		net.WriteInt(Rag:EntIndex(),32)
-		
+		net.WriteInt(FPRagVar:GetBool() and 1 or 0,2) 
 		local PlayerColor = ply:GetPlayerColor()
 		net.WriteVector(Vector( PlayerColor.r, PlayerColor.g, PlayerColor.b ))
 	net.Send(player.GetAll())
+		
+	end)
 	
 	return
 
@@ -97,16 +102,7 @@ hook.Add("PlayerDeath","CreateServerRagdoll",createRagdoll)
 
 hook.Add("PlayerSpawn","MoveRagdollCamera",function(ply) 
 	maxrags = math.max(maxDRagsVar:GetInt(),0)
-	ply:SetNWEntity( "RagDeath",nil) 
 	if maxrags==0 then plyrags[ply][1]:Remove() plyrags[ply][1]=nil end
-end)
-
-hook.Add("Think","RagdollFixCamera", function()
-  for _,ply in pairs(player.GetAll()) do
-    if ply:Alive() and IsValid(ply:GetNWEntity("RagDeath")) then
-      ply:SetNWEntity("RagDeath", nil)
-    end
-  end
 end)
 
 hook.Add( "PlayerDisconnected", "RagdollDeathDisconnect", function( ply )
