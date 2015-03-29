@@ -1,14 +1,19 @@
 if SERVER then return end
 
 local LocRag = nil
+local FP = false
 
-hook.Add("CalcView","RagdollDeathFP",function(ply, pos, angles, fov)
-  if LocalPlayer():Alive() then return end --Player's not dead... or is he?
-	local Rag = LocRag
-	if not Rag or not IsValid(Rag) then return end
+hook.Add("CalcView","RagDeath_Cam",function(ply, pos, angles, fov)
+	
+	if LocalPlayer():Alive() then return end
+	if not IsValid(LocRag) then return end
+	if not FP then 
+		local rd = util.TraceLine({start=LocRag:GetPos(),endpos=LocRag:GetPos()-angles:Forward()*105,filter={LocRag,LocalPlayer()}})
+		return {origin=LocRag:GetPos()-angles:Forward()*(100*rd.Fraction),angles=angles,fov=fov,znear=0.5} 
+	end
 	local view = {}
 
-	local head=Rag:GetAttachment( Rag:LookupAttachment( "eyes" ) )
+	local head = LocRag:GetAttachment( LocRag:LookupAttachment( "eyes" ) )
 	view.origin = head.Pos
 	view.angles = head.Ang
 	view.fov = fov
@@ -17,29 +22,22 @@ hook.Add("CalcView","RagdollDeathFP",function(ply, pos, angles, fov)
 	return view
 end)
 
-local tries = 0
-
-local setupClientRag
-setupClientRag = function(ID, Color, firstp)
-	tries = tries+1
-	if tries>3 then return end
-	LocRag = firstp and Entity(ID)
-	if not IsValid(LocRag) then
-		timer.Simple(0.04,function() setupClientRag(ID,Color, firstp) end)
-	end
-	local RagEnt = Entity(ID) 
-	RagEnt.GetPlayerColor = function(self) 
-		return Color
-	end
-end
+local HoldOnEnt = {}
 
 net.Receive("ragdeath_client",function()
 	local Rag = net.ReadInt(32)
-	local firstp = net.ReadInt(2)
+	local Ply = net.ReadInt(32)
 	local Color = net.ReadVector()
-	
-	timer.Simple(0.01,function()
-		tries = 0
-		setupClientRag(Rag,Color,firstp~=0)
-	end)
+	FP = net.ReadBool()
+	HoldOnEnt = {rag=Rag,ply=Ply,color=Color}
+end)
+
+hook.Add("NetworkEntityCreated","RagDeath_Setup",function(ent)
+	if not HoldOnEnt.rag then return end
+	if HoldOnEnt.rag==ent:EntIndex() then
+		if HoldOnEnt.ply==LocalPlayer():EntIndex() then LocRag=ent end
+		local getcol = HoldOnEnt.color
+		Entity(HoldOnEnt.rag).GetPlayerColor = function(self) return getcol end
+		HoldOnEnt = {}
+	end
 end)
