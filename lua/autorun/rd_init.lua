@@ -69,7 +69,7 @@ local function playerDie(ply)
 	local Ragdoll = createRagdoll(ply)
 	if not IsValid(Ragdoll) then return end
 	DeathRagdolls[ply] = DeathRagdolls[ply] or {}
-	maxrags = math.max(MaxDRagsVar:GetInt(),0)
+	maxrags = math.max(MaxDRagsVar:GetInt(),1)
 	while #DeathRagdolls[ply]>=maxrags do
 		local olrag = DeathRagdolls[ply][1]
 		if IsValid(olrag) then olrag:Remove() end
@@ -88,6 +88,7 @@ hook.Add("PlayerDeath","RagDeath_Death",playerDie)
 
 local function doRespawnPly(ply)
 	hasntRespawned[ply] = nil
+	DeathRagdolls[ply] = DeathRagdolls[ply] or {}
 	maxrags = math.max(MaxDRagsVar:GetInt(),0)
 	if maxrags==0 then 
 		local olrag = DeathRagdolls[ply][1]

@@ -7,6 +7,8 @@ hook.Add("CalcView","RagDeath_Cam",function(ply, pos, angles, fov)
 	
 	if LocalPlayer():Alive() then return end
 	if not IsValid(LocRag) then return end
+	local ent = GetViewEntity()
+	if ent!=LocalPlayer() then return end
 	if not FP then 
 		local rd = util.TraceLine({start=LocRag:GetPos(),endpos=LocRag:GetPos()-angles:Forward()*105,filter={LocRag,LocalPlayer()}})
 		return {origin=LocRag:GetPos()-angles:Forward()*(100*rd.Fraction),angles=angles,fov=fov,znear=0.5} 
